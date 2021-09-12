@@ -1,7 +1,7 @@
 <?php
 
 	define('SCRIPT_TITLE', 'SS Bookmarks');
-	define('SCRIPT_VERSION', 0.4);
+	define('SCRIPT_VERSION', 0.5);
 	define('SCRIPT_AUTHOR', 'Dominic Manley');
 	define('SCRIPT_HOMEPAGE', 'https://github.com/dominicwa/ss-bookmarks');
 
@@ -12,8 +12,9 @@
 	/*******************************************************************************/
 
 	$sPageTitle				= SCRIPT_TITLE . ' v ' . SCRIPT_VERSION;		// the page title (typically shown in the browser title bar)
-	$sScriptName 			= basename(__FILE__);							// filename of this script (best not to change)
-	$bEnableJavascript		= true;											// provides some UI improvements
+	$sScriptName			= basename(__FILE__);							// filename of this script (best not to change)
+	$bEnableJavascript		= true;											// provides some UI improvements (inc. bookmarklet)
+	$bShowBookmarklet		= true;											// whether to show a draggable bookmarklet link in the top right of the page
 	$sNoTagLabel			= 'no-tags';									// default label for bookmarks with no tags
 	$sLinkTarget			= '_blank';										// target for all links ('_self' will open in same window, '_blank' in a new window)
 	$bEnableBackups			= false;										// backup you script (and bookmark data)
@@ -29,9 +30,8 @@
 	/*DATA-START*/
 	$iNextIndex = 1;
 	$aBookmarks = array(
-		0 => array('label' => SCRIPT_TITLE, 'url' => SCRIPT_HOMEPAGE, 'tags' => '')
-	);
-	/*DATA-END*/
+		0 => array('label' => 'SS-Bookmarks', 'url' => 'https://github.com/dominicwa/ss-bookmarks', 'tags' => ''),
+	);/*DATA-END*/
 	
 	/*******************************************************************************/
 	/* Add/delete bookmarks                                                        */
@@ -39,14 +39,14 @@
 	
 	$bReWriteScript = false; // do we rewrite the script with updated data?
 	
-	if ($_GET['action'] == 'add') {
+	if ($_GET['action'] == 'add' || $_GET['action'] == 'bml') {
 		$aNewBookmark = array(
 			'label' => $_GET['label'],
 			'url' => $_GET['url'],
 			'tags' => str_replace(', ', ',', $_GET['tags']) // (strip spaces between commas)
 		);
 		$aBookmarks[$iNextIndex] = $aNewBookmark; // add new bookmark at next index
-		$iNextIndex++; // updated the index for next time
+		$iNextIndex++; // increase the index for next time
 		$bReWriteScript = true;
 	}
 	
@@ -62,6 +62,7 @@
 		// if there are no more tags for this bookmark, remove the record completely
 		if ($aBookmarks[intval($_GET['uid'])]['tags'] == '') {
 			unset($aBookmarks[intval($_GET['uid'])]);
+			$iNextIndex--; // descrease the index for next time
 		}
 		$bReWriteScript = true;
 	}
@@ -84,6 +85,14 @@
 			file_put_contents($bBackupFilename, $sScriptContents); // if condfigured to do so, save a copy of current script before overwriting
 		}
 		file_put_contents($sScriptName, $sPreData . $sNewData . $sAftData); // overwrite current script file with new data
+	}
+
+	if ($_GET['action'] == 'bml') {
+		if ($bEnableJavascript)
+			echo '<html><head><script type="text/javascript">window.close();</script></head></html>';
+		else
+			echo '<html><body>Bookmark added. Enable Javascript to auto-close this window.</body></html>';
+		exit();
 	}
 	
 	/*******************************************************************************/
@@ -117,14 +126,16 @@
 	<meta name="viewport" content="width=<?php echo $iViewPortWidth; ?>" />
 	<title><?php echo htmlentities($sPageTitle); ?></title>
 	<style type="text/css">
-		* 				{font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
-		a 				{color: blue;}
+		*				{font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+		a				{color: blue;}
 		a:hover 		{color: #F60;}
 		#tagForm		{padding-bottom: 10px; border-bottom: 1px solid #CCC;}
-		ul 				{margin: 0; padding: 0; margin-top: 10px; margin-bottom: 10px; border-bottom: 1px solid #CCC; padding-bottom: 5px;}
-		li 				{list-style: none; margin-bottom: 5px;}
-		.bmLink 		{float: left;}
-		.bmEdit 		{float: right;}
+		#tagForm select	{float: left;}
+		#tagForm a		{float: right;}
+		ul				{margin: 0; padding: 0; margin-top: 10px; margin-bottom: 10px; border-bottom: 1px solid #CCC; padding-bottom: 5px;}
+		li				{list-style: none; margin-bottom: 5px;}
+		.bmLink			{float: left;}
+		.bmEdit			{float: right;}
 		.bmEdit a		{display: block; padding: 0 5px; background: #EEE; text-decoration: none;}
 		.bmEdit a:hover	{background: #CCC;}
 		.empty			{margin-bottom: 10px; border-bottom: 1px solid #CCC; padding-bottom: 10px;}
@@ -132,11 +143,11 @@
 		#addForm label	{display: block; float: left; width: 100px; margin: 5px; text-align: right; clear: left;}
 		#addForm input	{margin-top: 4px;}
 		#addButton		{margin-left: 110px; clear: left; _margin-left: 118px;}
-		#label 			{width: 100px;}
-		#url 			{width: 160px;}
-		#tags 			{width: 100px;}
-		.clear 			{clear: both;}<?php if ($bEnableJavascript) { echo "\n"; ?>
-		#submitButton 	{display: none;}<?php } echo "\n"; ?>
+		#label			{width: 100px;}
+		#url			{width: 160px;}
+		#tags			{width: 100px;}
+		.clear			{clear: both;}<?php if ($bEnableJavascript) { echo "\n"; ?>
+		#submitButton	{display: none;}<?php } echo "\n"; ?>
 	</style>
 	<?php if ($bEnableJavascript) { ?>
 	<script type="text/javascript">
@@ -148,13 +159,21 @@
 			}
 			window.location.href = sUrl;
 		}
+		window.addEventListener('load', (event) => {
+			var cleanURL = window.location.origin + window.location.pathname.replace('index.php', '');
+			document.getElementById('bml').setAttribute('href', 'javascript:(function(){var r = prompt(\'Title\', document.title);if (r!=null){window.open(\'' + cleanURL + '?action=bml&label=\' + r + \'&url=\' + window.location.href);}}());');
+			<?php if (isset($_GET['action'])) { ?>
+			window.history.pushState({}, document.title, cleanURL);
+			<?php } ?>
+		});
 	</script>
 	<?php } ?>
 </head>
 <body>
 	<form action="<?php echo htmlentities($sScriptName); ?>" method="get" id="tagForm">
+		<?php if ($bEnableJavascript && $bShowBookmarklet) { ?><a href="#" id="bml">Bookmarklet</a><?php } ?>
 		<select name="tag" id="tag"<?php if ($bEnableJavascript) { ?> onchange="fChangeTag(this);"<?php } ?>><?php
-			
+
 				echo "\n";
 				for ($i = 0; $i < sizeof($aTags); $i++) {
 					$sSelected = '';
@@ -164,9 +183,10 @@
 					echo "\t\t\t" . '<option value="' . htmlentities($aTags[$i]) . '"' . $sSelected . '>' . htmlentities($aTags[$i]) . '</option>' . "\n";
 				}
 				echo "\t\t";
-			
+
 			?></select>
 		<input type="submit" name="submit" id="submitButton" value="Go" />
+		<div class="clear"></div>
 	</form><?php
 	
 		echo "\n";

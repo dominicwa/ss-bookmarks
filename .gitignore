@@ -1,0 +1,4 @@
+*.sublime*
+*sftp-config*
+
+.DS_Store
