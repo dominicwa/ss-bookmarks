@@ -8,5 +8,5 @@ services:
     ports:
       - "9002:80"
     #environment:
-    volumes:
-      - ./ss-bookmarks.php:/var/www/html/index.php
+    #volumes:
+    #  - ./ss-bookmarks.php:/var/www/html/index.php
