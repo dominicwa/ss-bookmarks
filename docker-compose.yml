@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+
+  ss-bookmarks:
+    image: dm/ss-bookmarks:latest
+    restart: always
+    environment:
+      - 'CONTAINER_TIMEZONE=Australia/Perth'
+      - 'APACHE_SERVER_NAME=localhost'
+      - 'PHP_DATE_TIMEZONE=Australia\/Perth'
+      - 'PHP_ERROR_REPORTING=E_ALL'
+      - 'PHP_DISPLAY_ERRORS=On'
+      - 'PHP_VARIABLES_ORDER=EGPCS'
+    cap_add:
+      - SYS_TIME
+      - SYS_NICE
+
+networks: 
+  default: 
+    external: 
+      name: dm-docker-host
