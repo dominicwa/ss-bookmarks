@@ -1,4 +1,7 @@
 *.sublime*
 *sftp-config*
-
 .DS_Store
+Thumbs.db
+
+**/src/vendor
+deploy.sh
