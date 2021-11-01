@@ -1,7 +1,7 @@
 <?php
 
 	define('SCRIPT_TITLE', 'SS Bookmarks');
-	define('SCRIPT_VERSION', 0.5);
+	define('SCRIPT_VERSION', 0.6);
 	define('SCRIPT_AUTHOR', 'Dominic Manley');
 	define('SCRIPT_HOMEPAGE', 'https://github.com/dominicwa/ss-bookmarks');
 
