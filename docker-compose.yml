@@ -3,8 +3,12 @@ version: '3'
 services:
 
   ss-bookmarks:
-    image: dm/ss-bookmarks:latest
+    build: ./
     restart: always
+    ports:
+      - 8000:80
+    volumes:
+      - ./ss-bookmarks.php:/var/www/html/index.php
     environment:
       - 'CONTAINER_TIMEZONE=Australia/Perth'
       - 'APACHE_SERVER_NAME=localhost'
@@ -15,8 +19,3 @@ services:
     cap_add:
       - SYS_TIME
       - SYS_NICE
-
-networks: 
-  default: 
-    external: 
-      name: dm-docker-host
